@@ -1,0 +1,3 @@
+
+class UncheckedExceptionError(Exception):
+    pass

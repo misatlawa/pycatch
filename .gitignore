@@ -1,0 +1,7 @@
+
+*.whl
+*.gz
+*.pyc
+*.egg-info
+
+.idea
