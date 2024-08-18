@@ -47,13 +47,11 @@ def test_catch_multiple_throws(throws_exceptions: Tuple[Type[Exception], Type[Ex
 
 def test_catch_multiple_throws_deep():
 
-    @throws(TypeError)
-    @throws(ZeroDivisionError)
+    @throws(TypeError, ZeroDivisionError)
     def divide_0(x, y):
         return x / y
 
-    @throws(ZeroDivisionError)
-    @throws(TypeError)
+    @throws(TypeError, ZeroDivisionError)
     def divide_1(x, y):
         return divide_0(x, y)
 
@@ -71,8 +69,7 @@ def test_catch_multiple_throws_wide():
     def invert_divide(x, y):
         return y / x
 
-    @throws(TypeError)
-    @throws(ZeroDivisionError)
+    @throws(ZeroDivisionError, TypeError)
     def one(x, y):
         return divide(x, y) * invert_divide(x, y)
 
@@ -82,8 +79,7 @@ def test_catch_multiple_throws_wide():
 
 @pytest.mark.parametrize('catch_exceptions', [(ZeroDivisionError, TypeError), (TypeError, ZeroDivisionError)])
 def test_nested_catch(catch_exceptions: Tuple[Type[Exception], Type[Exception]]):
-    @throws(TypeError)
-    @throws(ZeroDivisionError)
+    @throws(TypeError, ZeroDivisionError)
     def divide(x, y):
         return x / y
 
@@ -94,8 +90,7 @@ def test_nested_catch(catch_exceptions: Tuple[Type[Exception], Type[Exception]])
 
 def test_nested_catch_nested_throws():
 
-    @throws(TypeError)
-    @throws(ZeroDivisionError)
+    @throws(TypeError, ZeroDivisionError)
     def divide1(x, y):
         return x / y
 

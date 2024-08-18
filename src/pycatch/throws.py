@@ -1,50 +1,65 @@
 
 import inspect
 from functools import wraps
-from typing import Type, Dict, Any, Callable
+from types import FrameType
+from typing import Type, Any, Callable, TypeVar, List
 
 from pycatch import UncheckedExceptionError
 
 
-def _check_caller_catches_exc(exc_type: Type[Exception], caller_locals: Dict[str, Any]) -> bool:
-    return '__catches__' in caller_locals and exc_type in caller_locals['__catches__']
+_CHECK_EXCEPTIONS = True
+_REQUIRE_UNBROKEN_CHAIN = True
 
 
-def _check_caller_throws_exc(exc_type: Type[Exception], caller_caller_locals: Dict[str, Any]):
-    caller_is_decorated = caller_caller_locals.get('__is_throws_decorator__')
-    return caller_is_decorated and exc_type in caller_caller_locals['__throws__']
+def check_exceptions(b: bool):
+    global _CHECK_EXCEPTIONS
+    _CHECK_EXCEPTIONS = b
 
 
-def throws(exc_type: Type[Exception]):
-    def wrap(f: Callable) -> Callable:
+def require_unbroken_chain(b: bool):
+    global _REQUIRE_UNBROKEN_CHAIN
+    _REQUIRE_UNBROKEN_CHAIN = b
+
+
+def _get_catches(frame: FrameType) ->  List[Type[Exception]]:
+    catches = frame.f_locals.get('__catches__', tuple())
+    if not catches and not _REQUIRE_UNBROKEN_CHAIN:
+        while frame and not catches:
+            catches = frame.f_locals.get('__catches__', tuple())
+            frame = frame.f_back
+
+    return catches
+
+
+def _get_previous_throws(frame: FrameType) -> List[Type[Exception]]:
+    frame = frame.f_back
+    previous_throws = frame.f_locals.get('__throws__', tuple())
+    if not previous_throws and not _REQUIRE_UNBROKEN_CHAIN:
+        while frame and not previous_throws:
+            previous_throws = frame.f_locals.get('__throws__', tuple())
+            frame = frame.f_back
+
+    return previous_throws
+
+
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+def throws(*exc_types: Type[Exception]) -> Callable[[_F], _F]:
+    def wrap(f: _F) -> _F:
+        if not _CHECK_EXCEPTIONS:
+            return f
+
         @wraps(f)
         def call(*args, **kwargs):
-            caller_frame = inspect.stack()[1].frame
-            caller_locals = caller_frame.f_locals
-            if caller_frame.f_back is None:
-                caller_caller_locals = dict()
-            else:
-                caller_caller_locals = caller_frame.f_back.f_locals
+            frame = inspect.stack()[1].frame
+            caller_throws = _get_previous_throws(frame)
+            caller_catches = _get_catches(frame)
+            __catches__ = (*caller_throws, *caller_catches)
+            __throws__ =  (*caller_throws, *exc_types)
 
-            caller_caches_exc = _check_caller_catches_exc(exc_type, caller_locals)
-            caller_throws_exc = _check_caller_throws_exc(exc_type, caller_caller_locals)
-
-            __is_throws_decorator__ = True
-            __catches__ = list()
-            __throws__ = [exc_type]
-
-            if caller_caches_exc:
-                __catches__ = caller_locals['__catches__']
-
-                # chaining multiple `throws` decorators sums theirs lists of thrown exceptions
-                if caller_locals.get('__is_throws_decorator__'):
-                    __throws__ += caller_locals['__throws__']
-
-            elif caller_throws_exc:
-                __catches__ = caller_caller_locals['__throws__']
-
-            else:
-                raise UncheckedExceptionError(exc_type.__name__)
+            for exc_type in exc_types:
+                if exc_type not in __catches__:
+                    raise UncheckedExceptionError(exc_type.__name__)
 
             return f(*args, **kwargs)
         return call

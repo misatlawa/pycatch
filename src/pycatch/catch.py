@@ -8,16 +8,16 @@ from pycatch.handlers import raise_, ExceptionHandler
 
 class Catch:
 	def __init__(self, *exc_types: Type[Exception], handler: ExceptionHandler = raise_):
-		self._exc_types = list(exc_types)
+		self._exc_types = exc_types
 		self._handler = handler
 		self._catches_before = list()
 
 	def __enter__(self):
 		this_frame = inspect.stack()[1].frame
 		caller_frame = this_frame.f_back
-		caller_frame_throws = (caller_frame and caller_frame.f_locals.get('__throws__')) or list()
-		self._catches_before = this_frame.f_locals.get('__catches__') or list()
-		this_frame.f_locals['__catches__'] = self._exc_types + self._catches_before + caller_frame_throws
+		caller_frame_throws = (caller_frame and caller_frame.f_locals.get('__throws__')) or tuple()
+		self._catches_before = this_frame.f_locals.get('__catches__') or tuple()
+		this_frame.f_locals['__catches__'] = (*self._exc_types, *self._catches_before, *caller_frame_throws)
 
 		return self
 

@@ -1,8 +1,7 @@
 
 import pytest
 
-from pycatch import throws, UncheckedExceptionError, Catch
-
+from pycatch import throws, UncheckedExceptionError, Catch, require_unbroken_chain, check_exceptions
 
 def test_throws_no_catch():
 
@@ -53,8 +52,7 @@ def test_throws_missing_nested_catch():
 
 def test_throws_multiple_missing_nested_catch():
 
-    @throws(TypeError)
-    @throws(ZeroDivisionError)
+    @throws(TypeError, ZeroDivisionError)
     def divide1(x, y):
         return x / y
 
