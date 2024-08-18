@@ -14,12 +14,12 @@ def test_catch():
     with Catch(ZeroDivisionError):
         divide(3, 2)
 
+
 def test_catch_nested_throws():
 
     @throws(ZeroDivisionError)
     def divide1(x, y):
         return x / y
-
 
     @throws(ZeroDivisionError)
     def divide2(x, y):

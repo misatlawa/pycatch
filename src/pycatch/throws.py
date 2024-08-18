@@ -21,7 +21,7 @@ def require_unbroken_chain(b: bool):
     _REQUIRE_UNBROKEN_CHAIN = b
 
 
-def _get_catches(frame: FrameType) ->  List[Type[Exception]]:
+def _get_catches(frame: FrameType) -> List[Type[Exception]]:
     catches = frame.f_locals.get('__catches__', tuple())
     if not catches and not _REQUIRE_UNBROKEN_CHAIN:
         while frame and not catches:
@@ -44,6 +44,7 @@ def _get_previous_throws(frame: FrameType) -> List[Type[Exception]]:
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 
+
 def throws(*exc_types: Type[Exception]) -> Callable[[_F], _F]:
     def wrap(f: _F) -> _F:
         if not _CHECK_EXCEPTIONS:
@@ -55,7 +56,7 @@ def throws(*exc_types: Type[Exception]) -> Callable[[_F], _F]:
             caller_throws = _get_previous_throws(frame)
             caller_catches = _get_catches(frame)
             __catches__ = (*caller_throws, *caller_catches)
-            __throws__ =  (*caller_throws, *exc_types)
+            __throws__ = (*caller_throws, *exc_types)
 
             for exc_type in exc_types:
                 if exc_type not in __catches__:
