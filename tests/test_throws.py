@@ -3,6 +3,7 @@ import pytest
 
 from pycatch import throws, UncheckedExceptionError, Catch, require_unbroken_chain, check_exceptions
 
+
 def test_throws_no_catch():
 
     @throws(ZeroDivisionError)
